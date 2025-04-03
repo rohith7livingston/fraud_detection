@@ -84,6 +84,10 @@ app.post("/status", async (req, res) => {
         res.json({ message: `✅ Transaction ${transaction_id} updated to ${new_status}` });
     });
 });
+
+
+
+
 app.get("/transactions", async (req, res) => {
     const query = "SELECT * FROM transactions ORDER BY timestamp DESC"; // Get all transactions (latest first)
 
@@ -100,6 +104,11 @@ app.get("/transactions", async (req, res) => {
         res.json({ transactions: result });  // Return all transactions in the 'transactions' key
     });
 });
+
+
+
+
+
 
 
 app.get("/transaction/:id", async (req, res) => {
