@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
+import {
+  Card, CardContent, Table, TableHead, TableRow, TableCell, TableBody
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import ForceGraph3D from "react-force-graph-3d";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
 
-export default function Home() {
+export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const navigate = useNavigate();
 
@@ -15,14 +16,15 @@ export default function Home() {
       .then((res) => res.json())
       .then((data) => {
         const transformedData = data.transactions.map((tx) => ({
-          id: `T${tx.transaction_id}`,
-          fraud_score: tx.fraud_score !== undefined ? tx.fraud_score : Math.random() * 100,
+          id: tx.transaction_id,
+          displayId: `T${tx.transaction_id}`,
+          fraud_score: tx.fraud_score || Math.random() * 100,
           timestamp: tx.timestamp,
           amount: tx.amount,
           customer_id: tx.customer_id,
           transaction_type: tx.transaction_type,
-          location_from: tx.location_from,
           location_to: tx.location_to,
+          status: tx.status || "Pending"
         }));
         setTransactions(transformedData);
       })
@@ -30,80 +32,71 @@ export default function Home() {
   }, []);
 
   const handleRowClick = (transactionId) => {
-    navigate(`/transaction/${transactionId}`);
+    navigate(`/transaction/T${transactionId}`);
   };
 
-  const fraudData = transactions.filter((tx) => tx.fraud_score > 50);
-  const fraudChartData = {
-    labels: fraudData.map((tx) => tx.id),
-    datasets: [
-      {
-        label: "Fraud Scores",
-        data: fraudData.map((tx) => tx.fraud_score),
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
-      },
-    ],
-  };
-
-  const graphData = {
-    nodes: transactions.map((tx) => ({ id: tx.id, fraud_score: tx.fraud_score })),
-    links: transactions.map((tx, i) =>
-      i > 0 ? { source: transactions[i - 1].id, target: tx.id } : null
-    ).filter((link) => link !== null),
+  const chartData = {
+    labels: transactions.map(tx => tx.displayId),
+    datasets: [{
+      label: "Transaction Amount",
+      data: transactions.map(tx => tx.amount),
+      backgroundColor: "rgba(255, 99, 132, 0.5)",
+    }]
   };
 
   return (
-    <div style={{ backgroundColor: "#FFF7F7", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <div style={{ position: "fixed", top: 0, width: "100%", zIndex: 1000 }}>
-        <NavBar />
-      </div>
+    <div style={{ padding: "20px", backgroundColor: "#ffe9e9", minHeight: "100vh", fontSize: "0.92rem" }}>
+      <NavBar />
+      <div style={{ marginTop: "60px", display: "flex", gap: "20px", justifyContent: "center", flexWrap: "wrap" }}>
+        <Card style={{ flex: "2.5", padding: "20px", backgroundColor: "white", borderRadius: "16px", boxShadow: "0px 4px 8px rgba(0,0,0,0.1)", margin: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "15px" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {["#ff0000", "#ffde59", "#7ed957"].map((color, index) => (
+                <div
+                  key={index}
+                  style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: color }}
+                />
+              ))}
+            </div>
+            <h3 style={{ margin: 0 }}>Transactions are being processed...</h3>
+          </div>
 
-      <div style={{ marginTop: "100px", display: "grid", gap: "24px", maxWidth: "1400px", margin: "auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr", gap: "24px" }}>
-          <Card style={{ backgroundColor: "white", borderRadius: "16px", boxShadow: "0px 4px 8px rgba(0,0,0,0.08)" }}>
-            <CardContent>
-              <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "16px", color: "#333" }}>Transaction History</h2>
-              <Table>
-                <TableHead>
-                  <TableRow style={{ backgroundColor: "#F87171" }}>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Time-Stamp</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Transaction ID</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Amount</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Customer ID</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Transaction Type</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Fraud Score</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Location From</TableCell>
-                    <TableCell style={{ fontWeight: "bold", color: "#FFF" }}>Location To</TableCell>
+          <CardContent>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>Time-Stamp</TableCell>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>ID</TableCell>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>Customer</TableCell>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>Transaction Type</TableCell>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>Amount</TableCell>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>Location To</TableCell>
+                  <TableCell style={{ backgroundColor: "#ffd6d6", fontWeight: "bold" }}>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {transactions.map((tx) => (
+                  <TableRow key={tx.id} onClick={() => handleRowClick(tx.id)} style={{ cursor: "pointer" }}>
+                    <TableCell>{tx.timestamp}</TableCell>
+                    <TableCell>{tx.displayId}</TableCell>
+                    <TableCell>{tx.customer_id}</TableCell>
+                    <TableCell>{tx.transaction_type}</TableCell>
+                    <TableCell>{tx.amount}</TableCell>
+                    <TableCell>{tx.location_to}</TableCell>
+                    <TableCell style={{ backgroundColor: tx.status === "Flagged" ? "#ffcccc" : tx.status === "Under Review" ? "#fffacd" : tx.status === "Escalated" ? "#ff9999" : "#d9f7be", fontWeight: "bold", textAlign: "center", borderRadius: "8px", padding: "2px", height: "5px" }}>{tx.status}</TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {transactions.map((tx) => (
-                    <TableRow key={tx.id} style={{ cursor: "pointer" }} onClick={() => handleRowClick(tx.customer_id)}>
-                      <TableCell>{tx.timestamp}</TableCell>
-                      <TableCell>{tx.id}</TableCell>
-                      <TableCell>{tx.amount} rs</TableCell>
-                      <TableCell>{tx.customer_id}</TableCell>
-                      <TableCell>{tx.transaction_type}</TableCell>
-                      <TableCell>{tx.fraud_score.toFixed(2)}</TableCell>
-                      <TableCell>{tx.location_from}</TableCell>
-                      <TableCell>{tx.location_to}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-          <Card style={{ backgroundColor: "white", borderRadius: "16px", padding: "16px", textAlign: "center", boxShadow: "0px 4px 8px rgba(0,0,0,0.08)", height: "500px" }}>
-            <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#333" }}>Fraud Statistics (3D)</h2>
-            <ForceGraph3D graphData={graphData} nodeAutoColorBy="fraud_score" linkDirectionalParticles={2} linkDirectionalParticleSpeed={0.01} nodeLabel={(node) => `Transaction ${node.id}\nFraud Score: ${node.fraud_score.toFixed(2)}`} width={400} height={400} />
-          </Card>
-
-          <Card style={{ backgroundColor: "white", borderRadius: "16px", padding: "16px", textAlign: "center", boxShadow: "0px 4px 8px rgba(0,0,0,0.08)", height: "500px" }}>
-            <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#333" }}>Fraud Score Distribution</h2>
-            <Bar data={fraudChartData} />
-          </Card>
-        </div>
+        <Card style={{ flex: "1", padding: "20px", backgroundColor: "white", borderRadius: "16px", boxShadow: "0px 4px 8px rgba(0,0,0,0.1)", margin: "10px" }}>
+          <CardContent>
+            <h3>Transaction Summary</h3>
+            <Bar data={chartData} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
