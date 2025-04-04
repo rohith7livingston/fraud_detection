@@ -8,53 +8,65 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors());
-
 app.post("/process-transaction", async (req, res) => {
     try {
         const transactionData = req.body;
         console.log("📩 Transaction Data Received:", transactionData);
 
-        // Send to Python backend
-        const pythonResponse = await axios.post("http://127.0.0.1:5000/predict", transactionData);
+        // Send transaction data to Python backend
+        let pythonResponse;
+        try {
+            pythonResponse = await axios.post("http://127.0.0.1:5000/predict", transactionData);
+        } catch (err) {
+            console.error("🚨 Python backend unreachable:", err.message);
+            return res.status(500).json({ error: "Python backend is unavailable" });
+        }
+
         console.log("🎯 Fraud Flag from Python:", pythonResponse.data);
 
         if (pythonResponse.data.fraud_flag !== undefined) {
             const fraudFlag = pythonResponse.data.fraud_flag;
             const explanation = pythonResponse.data.explanation || "No explanation available";
-            const status = "pending"; // New column with default value "pending"
+            const status = "pending"; // Default value for new column
 
             transactionData.fraud_flag = fraudFlag;
             transactionData.explanation = explanation;
-            transactionData.status = status; // Add status to transaction data
+            transactionData.status = status;
 
-            // Store transaction and explanation in MySQL
+            // SQL query to insert transaction data into MySQL
             const query = `
-                INSERT INTO transactions (timestamp, customer_id, amount, merchant, transaction_type, 
+                INSERT INTO transactions_refine (timestamp, customer_id, amount, merchant, transaction_type, 
                     location_from, location_to, fraud_flag, customer_transaction_count, payment_method, 
                     merchant_risk_score, previous_location, hour_of_day, explanation, status)
-                VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`; // Added 'status' column
+                VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
 
             const values = [
                 transactionData.customer_id, transactionData.amount,
                 transactionData.merchant, transactionData.transaction_type, transactionData.location_from,
                 transactionData.location_to, fraudFlag, transactionData.customer_transaction_count,
                 transactionData.payment_method, transactionData.merchant_risk_score,
-                transactionData.previous_location, transactionData.hour_of_day, explanation, status // Added status
+                transactionData.previous_location, transactionData.hour_of_day, explanation, status
             ];
 
+            // Execute query
             db.query(query, values, (err, result) => {
                 if (err) {
                     console.error("❌ Error inserting transaction:", err);
                     return res.status(500).json({ error: "Database error" });
                 }
-                res.json({ message: "✅ Transaction processed successfully", fraud_flag: fraudFlag, status: status });
+                return res.json({ 
+                    message: "✅ Transaction processed successfully", 
+                    fraud_flag: fraudFlag, 
+                    status: status 
+                });
             });
         } else {
-            res.status(500).json({ error: "No fraud flag returned from Python backend" });
+            return res.status(500).json({ error: "No fraud flag returned from Python backend" });
         }
     } catch (error) {
         console.error("❌ Error processing transaction:", error.message);
-        res.status(500).json({ error: "Transaction processing failed" });
+        return res.status(500).json({ error: "Transaction processing failed" });
     }
 });
 
