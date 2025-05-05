@@ -1,6 +1,7 @@
+
 const express = require("express");
 const axios = require("axios");
-const db = require("./server");  // MySQL connection
+const db = require("./server"); // MySQL connection
 const cors = require("cors");
 
 const app = express();
@@ -8,160 +9,160 @@ const PORT = 3000;
 
 app.use(express.json());
 app.use(cors());
+
+// Handle transaction processing
 app.post("/process-transaction", async (req, res) => {
+  try {
+    const transactionData = req.body;
+    console.log("📩 Transaction Data Received:", transactionData);
+
+    let pythonResponse;
     try {
-        const transactionData = req.body;
-        console.log("📩 Transaction Data Received:", transactionData);
-
-        // Send transaction data to Python backend
-        let pythonResponse;
-        try {
-            pythonResponse = await axios.post("http://127.0.0.1:5000/predict", transactionData);
-        } catch (err) {
-            console.error("🚨 Python backend unreachable:", err.message);
-            return res.status(500).json({ error: "Python backend is unavailable" });
-        }
-
-        console.log("🎯 Fraud Flag from Python:", pythonResponse.data);
-
-        if (pythonResponse.data.fraud_flag !== undefined) {
-            const fraudFlag = pythonResponse.data.fraud_flag;
-            const explanation = pythonResponse.data.explanation || "No explanation available";
-            const status = "pending"; // Default value for new column
-
-            transactionData.fraud_flag = fraudFlag;
-            transactionData.explanation = explanation;
-            transactionData.status = status;
-
-            // SQL query to insert transaction data into MySQL
-            const query = `
-                INSERT INTO transactions_refine (timestamp, customer_id, amount, merchant, transaction_type, 
-                    location_from, location_to, fraud_flag, customer_transaction_count, payment_method, 
-                    merchant_risk_score, previous_location, hour_of_day, explanation, status)
-                VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `;
-
-            const values = [
-                transactionData.customer_id, transactionData.amount,
-                transactionData.merchant, transactionData.transaction_type, transactionData.location_from,
-                transactionData.location_to, fraudFlag, transactionData.customer_transaction_count,
-                transactionData.payment_method, transactionData.merchant_risk_score,
-                transactionData.previous_location, transactionData.hour_of_day, explanation, status
-            ];
-
-            // Execute query
-            db.query(query, values, (err, result) => {
-                if (err) {
-                    console.error("❌ Error inserting transaction:", err);
-                    return res.status(500).json({ error: "Database error" });
-                }
-                return res.json({ 
-                    message: "✅ Transaction processed successfully", 
-                    fraud_flag: fraudFlag, 
-                    status: status 
-                });
-            });
-        } else {
-            return res.status(500).json({ error: "No fraud flag returned from Python backend" });
-        }
-    } catch (error) {
-        console.error("❌ Error processing transaction:", error.message);
-        return res.status(500).json({ error: "Transaction processing failed" });
-    }
-});
-
-app.post("/status", async (req, res) => {
-    const { transaction_id, new_status } = req.body;
-
-    if (!transaction_id || !new_status) {
-        return res.status(400).json({ error: "Transaction ID and new status are required" });
+      pythonResponse = await axios.post("http://127.0.0.1:5000/predict", transactionData);
+    } catch (err) {
+      console.error("🚨 Python backend unreachable:", err.message);
+      return res.status(500).json({ error: "Python backend is unavailable" });
     }
 
-    if (!["clean", "fraud"].includes(new_status)) {
-        return res.status(400).json({ error: "Invalid status. Use 'clean' or 'fraud'" });
-    }
+    console.log("🎯 Fraud Flag from Python:", pythonResponse.data);
 
-    const query = "UPDATE transactions SET status = ? WHERE id = ?";
+    if (pythonResponse.data.fraud_flag !== undefined) {
+      const fraudFlag = pythonResponse.data.fraud_flag;
+      const explanation = pythonResponse.data.explanation || "No explanation available";
+      const status = "pending";
 
-    db.query(query, [new_status, transaction_id], (err, result) => {
+      const query = `
+        INSERT INTO transactions_refine (timestamp, customer_id, amount, merchant, transaction_type, 
+          location_from, location_to, fraud_flag, customer_transaction_count, payment_method, 
+          merchant_risk_score, previous_location, hour_of_day, explanation, status)
+        VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const values = [
+        transactionData.customer_id, transactionData.amount,
+        transactionData.merchant, transactionData.transaction_type, transactionData.location_from,
+        transactionData.location_to, fraudFlag, transactionData.customer_transaction_count,
+        transactionData.payment_method, transactionData.merchant_risk_score,
+        transactionData.previous_location, transactionData.hour_of_day, explanation, status
+      ];
+
+      db.query(query, values, (err, result) => {
         if (err) {
-            console.error("❌ Error updating transaction status:", err);
-            return res.status(500).json({ error: "Database error" });
+          console.error("❌ Error inserting transaction:", err);
+          return res.status(500).json({ error: "Database error" });
         }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Transaction not found" });
-        }
-
-        res.json({ message: `✅ Transaction ${transaction_id} updated to ${new_status}` });
-    });
-});
-
-
-
-
-app.get("/transactions", async (req, res) => {
-    const query = "SELECT * FROM transactions ORDER BY timestamp DESC"; // Get all transactions (latest first)
-
-    db.query(query, (err, result) => {
-        if (err) {
-            console.error("❌ Error fetching transactions:", err);
-            return res.status(500).json({ error: "Database error" });
-        }
-
-        if (result.length === 0) {
-            return res.status(404).json({ error: "No transactions found" });
-        }
-
-        res.json({ transactions: result });  // Return all transactions in the 'transactions' key
-    });
-});
-
-
-
-
-
-
-
-app.get("/transaction/:id", async (req, res) => {
-    const transactionId = req.params.id;
-
-    if (!transactionId) {
-        return res.status(400).json({ error: "Transaction ID is required" });
-    }
-
-    // Query to fetch the selected transaction
-    const query1 = "SELECT * FROM transactions WHERE id = ?";
-    
-    db.query(query1, [transactionId], (err, result1) => {
-        if (err) {
-            console.error("❌ Error fetching transaction:", err);
-            return res.status(500).json({ error: "Database error" });
-        }
-
-        if (result1.length === 0) {
-            return res.status(404).json({ error: "Transaction not found" });
-        }
-
-        const transaction = result1[0];
-        const customerId = transaction.customer_id;
-
-        // Query to fetch all previous transactions of the same customer
-        const query2 = "SELECT * FROM transactions WHERE customer_id = ? AND id < ? ORDER BY timestamp DESC";
-
-        db.query(query2, [customerId, transactionId], (err, result2) => {
-            if (err) {
-                console.error("❌ Error fetching previous transactions:", err);
-                return res.status(500).json({ error: "Database error" });
-            }
-
-            res.json({
-                selected_transaction: transaction,
-                previous_transactions: result2
-            });
+        return res.json({
+          message: "✅ Transaction processed successfully",
+          fraud_flag: fraudFlag,
+          status: status
         });
-    });
+      });
+    } else {
+      return res.status(500).json({ error: "No fraud flag returned from Python backend" });
+    }
+  } catch (error) {
+    console.error("❌ Error processing transaction:", error.message);
+    return res.status(500).json({ error: "Transaction processing failed" });
+  }
 });
+
+// Update transaction status
+app.post("/status", (req, res) => {
+  const { transaction_id, new_status } = req.body;
+
+  if (!transaction_id || !new_status) {
+    return res.status(400).json({ error: "Transaction ID and new status are required" });
+  }
+
+  if (!["clean", "fraud"].includes(new_status)) {
+    return res.status(400).json({ error: "Invalid status. Use 'clean' or 'fraud'" });
+  }
+
+  const query = "UPDATE transactions_refine SET status = ? WHERE id = ?";
+
+  db.query(query, [new_status, transaction_id], (err, result) => {
+    if (err) {
+      console.error("❌ Error updating transaction status:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    res.json({ message: `✅ Transaction ${transaction_id} updated to ${new_status}` });
+  });
+});
+
+// Fetch all transactions
+app.get("/transactions", (req, res) => {
+  const query = "SELECT * FROM transactions_refine ORDER BY timestamp DESC";
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("❌ Error fetching transactions:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json({ transactions: result });
+  });
+});
+
+// Fetch single transaction and its history
+app.get("/transaction/:id", (req, res) => {
+  const transactionId = req.params.id;
+
+  const query1 = "SELECT * FROM transactions_refine WHERE id = ?";
+  db.query(query1, [transactionId], (err, result1) => {
+    if (err) {
+      console.error("❌ Error fetching transaction:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (result1.length === 0) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    const transaction = result1[0];
+    const customerId = transaction.customer_id;
+
+    const query2 = "SELECT * FROM transactions_refine WHERE customer_id = ? AND id < ? ORDER BY timestamp DESC";
+    db.query(query2, [customerId, transactionId], (err, result2) => {
+      if (err) {
+        console.error("❌ Error fetching previous transactions:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      res.json({
+        selected_transaction: transaction,
+        previous_transactions: result2
+      });
+    });
+  });
+});
+
+
+
+
+//graph
+// Fetch all transactions for a specific customer
+app.get("/transactions/customer/:customerId", (req, res) => {
+  const customerId = req.params.customerId;
+
+  // Query to get all transactions for the specific customer, ordered by timestamp
+  const query = "SELECT * FROM transactions_refine WHERE customer_id = ? ORDER BY timestamp DESC";
+
+  db.query(query, [customerId], (err, result) => {
+    if (err) {
+      console.error("❌ Error fetching customer transactions:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    // Send all transactions for the customer as a response
+    res.json({ transactions: result });
+  });
+});
+
 
 
 app.listen(PORT, () => {
@@ -169,13 +170,6 @@ app.listen(PORT, () => {
 });
 
 module.exports = { app };
-
-
-
-
-
-
-
 
 
 
