@@ -2,7 +2,7 @@
 
 This project implements a **Fraud Detection System** API that identifies potentially fraudulent transactions using an explainable anomaly detection model based on spending behavior and transaction history. The API integrates with a Node.js backend, allowing it to process transaction data and return fraud flags for each transaction.
 
-#Problems faced 😶 -- Solution 😎
+## Problems faced 😶 -- Solution 😎
 Now a days fraud's are increasing effectivley  -- so the Main Aim is to create a API that can easily integrate with banking transaction-processing and increase effectivness in detecting fraud
 
 # Frauds ❌  Fraud detection API ✅
