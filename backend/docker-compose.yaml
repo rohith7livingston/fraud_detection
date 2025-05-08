@@ -1,0 +1,21 @@
+version: '3'
+services:
+  nodejs-backend:
+    build:
+      context: ./backend/nodejs_backend
+    ports:
+      - "5000:5000"
+    networks:
+      - fraud_detection_network
+
+  python-backend:
+    build:
+      context: ./backend/python_backend
+    ports:
+      - "5001:5001"
+    networks:
+      - fraud_detection_network
+
+networks:
+  fraud_detection_network:
+    driver: bridge
