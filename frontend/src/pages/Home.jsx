@@ -60,7 +60,7 @@ export default function Transactions() {
             </div>
             <h3 style={{ margin: 0 }}>Transactions are being processed...</h3>
           </div>
-
+{/*  */}
           <CardContent>
             <Table>
               <TableHead>
