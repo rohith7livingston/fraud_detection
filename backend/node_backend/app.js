@@ -134,7 +134,7 @@ app.get("/transaction/:id", async (req, res) => {
         const transaction = result1[0];
         const customerId = transaction.customer_id;
 
-        // Query to fetch all previous transactions of the same customer
+    // Query to fetch all previous transactions of the same customer
         const query2 = "SELECT * FROM transactions WHERE customer_id = ? AND id < ? ORDER BY timestamp DESC";
 
         db.query(query2, [customerId, transactionId], (err, result2) => {
