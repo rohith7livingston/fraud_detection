@@ -1,53 +1,49 @@
-Fraud Detection System API
-This project implements a Fraud Detection System API that identifies potentially fraudulent transactions using an explainable anomaly detection model based on spending behavior and transaction history. The API integrates with a Node.js backend, allowing it to process transaction data and return fraud flags for each transaction.
+# Fraud Detection System API
 
-Features
-Transaction Analysis: Receives transaction data and flags fraudulent transactions.
+This project implements a **Fraud Detection System** API that identifies potentially fraudulent transactions using an explainable anomaly detection model based on spending behavior and transaction history. The API integrates with a Node.js backend, allowing it to process transaction data and return fraud flags for each transaction.
 
-Explainable Model: Uses Random Forest for anomaly detection and provides white-box explanations for the results.
+## Features
 
-Fraud Detection Score: Each transaction is assigned a fraud score based on historical behavior and transaction details.
+- **Transaction Analysis:** Receives transaction data and flags fraudulent transactions.
+- **Explainable Model:** Uses Random Forest for anomaly detection and provides white-box explanations for the results.
+- **Fraud Detection Score:** Each transaction is assigned a fraud score based on historical behavior and transaction details.
+- **Data Storage:** Stores transaction data along with fraud flags in a MySQL database.
+- **Team Review Interface:** Facilitates fraud review by providing detailed reports of flagged transactions.
 
-Data Storage: Stores transaction data along with fraud flags in a MySQL database.
+## Project Structure
 
-Team Review Interface: Facilitates fraud review by providing detailed reports of flagged transactions.
-
-Project Structure
-graphql
-Copy
-Edit
 fraud_detection_system/
 │
 ├── backend/
-│   ├── nodejs_backend/
-│   │   ├── app.js             # Node.js application entry point
-│   │   ├── controllers/       # Controllers handling API requests
-│   │   └── models/            # Database models
-│   │
-│   ├── python_backend/
-│   │   ├── app.py             # Flask application entry point
-│   │   ├── fraud_model.py     # Model for fraud detection (Random Forest)
-│   │   ├── requirements.txt   # Python dependencies
-│   │   └── utils.py           # Helper functions
-│   │
+│ ├── nodejs_backend/
+│ │ ├── app.js # Node.js application entry point
+│ │ ├── controllers/ # Controllers handling API requests
+│ │ └── models/ # Database models
+│ │
+│ ├── python_backend/
+│ │ ├── app.py # Flask application entry point
+│ │ ├── fraud_model.py # Model for fraud detection (Random Forest)
+│ │ ├── requirements.txt # Python dependencies
+│ │ └── utils.py # Helper functions
+│ │
 └── README.md
-Getting Started
-Prerequisites
-Node.js (for Node.js backend)
 
-Python (for Flask backend)
 
-MySQL (for database storage)
+## Getting Started
 
-pip (for Python dependencies)
+### Prerequisites
 
-npm (for Node.js dependencies)
+- Node.js (for Node.js backend)
+- Python (for Flask backend)
+- MySQL (for database storage)
+- `pip` (for Python dependencies)
+- `npm` (for Node.js dependencies)
 
-Installation
-1. Clone the repository
-bash
-Copy
-Edit
+### Installation
+
+#### 1. Clone the repository
+
+```bash
 git clone https://github.com/yourusername/fraud_detection_system.git
 cd fraud_detection_system
 2. Set up the Node.js backend
@@ -159,4 +155,14 @@ Contributions are welcome! If you'd like to contribute, please fork the reposito
 
 License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+yaml
+Copy
+Edit
+
+---
+
+This `README.md` structure should give a clear, detailed overview of your project, including setup instructions, API endpoints, and other important details. Make sure to replace placeholders like `https://github.com/yourusername/fraud_detection_system.git` with the correct URL to your repository.
+
+Let me know if you need any adjustments or additional sections
 
