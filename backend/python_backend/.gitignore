@@ -20,9 +20,6 @@ __pycache__/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Ignore dataset and model files
-transaction.csv
-model/
 
 # Ignore system-specific files
 .DS_Store
