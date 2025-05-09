@@ -15,4 +15,5 @@ COPY . .
 EXPOSE 5001
 
 # Command to run the Python Flask app
+CMD ["python","train_model.py"]
 CMD ["python", "app.py"]
