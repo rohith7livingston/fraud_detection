@@ -1,0 +1,206 @@
+/* --- GOOGLE FONT IMPORTS --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+/* --- THEME & CSS VARIABLES (SINGLE SOURCE OF TRUTH) --- */
+:root {
+  /* Fonts */
+  --font-primary: 'Inter', sans-serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
+  
+  /* Colors - Backgrounds */
+  --color-background-dark: #0A0A10;
+  --color-background-med: #10101E;
+  --color-background-light: #1A1A2A;
+  --color-border: #2A2A3A;
+
+  /* Colors - Text */
+  --color-text-primary: #F0F0F5;
+  --color-text-secondary: #A0A0B0;
+  --color-text-disabled: #606070;
+
+  /* Colors - Brand & Accent */
+  --color-brand-purple: #8A42F4;
+  --color-brand-pink: #E8467F;
+  --color-accent-cyan: #46E8D8;
+
+  /* Colors - Status */
+  --status-clean: #22C55E; /* Green */
+  --status-fraud: #EF4444; /* Red */
+  --status-pending: #EAB308; /* Yellow */
+  --color-bg-clean: rgba(34, 197, 94, 0.1);
+  --color-border-clean: rgba(34, 197, 94, 0.4);
+  --color-bg-fraud: rgba(239, 68, 68, 0.1);
+  --color-border-fraud: rgba(239, 68, 68, 0.4);
+  --color-bg-pending: rgba(234, 179, 8, 0.1);
+  --color-border-pending: rgba(234, 179, 8, 0.4);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.15);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.25), 0 4px 6px -4px rgb(0 0 0 / 0.25);
+}
+
+/* --- BASE & GLOBAL STYLES --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-background-dark);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: clamp(1rem, 5vw, 3rem);
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- GENERAL PURPOSE CARD --- */
+.card {
+  background-color: var(--color-background-med);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* --- BUTTONS --- */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button--primary {
+  background: linear-gradient(90deg, var(--color-brand-purple), var(--color-brand-pink));
+  color: white;
+}
+.button--secondary {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+.button--secondary:hover {
+  background-color: var(--color-background-light);
+  border-color: var(--color-brand-purple);
+}
+
+.button-approve {
+  background-color: var(--color-bg-clean);
+  color: var(--status-clean);
+  border-color: var(--color-border-clean);
+}
+.button-approve:hover { background-color: rgba(34, 197, 94, 0.2); }
+.button-deny {
+  background-color: var(--color-bg-fraud);
+  color: var(--status-fraud);
+  border-color: var(--color-border-fraud);
+}
+.button-deny:hover { background-color: rgba(239, 68, 68, 0.2); }
+
+
+/* --- FORMS --- */
+.transaction-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.transaction-form .button--primary {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+}
+.form-group label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.form-group input {
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.7rem;
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  font-family: var(--font-primary);
+  transition: all 0.2s ease;
+  width: 190px;
+}
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-brand-purple);
+  box-shadow: 0 0 0 3px rgba(138, 66, 244, 0.3);
+}
+
+/* --- SPINNER & MISC --- */
+.spinner-container {
+  padding: 3rem 0;
+  display: flex;
+  justify-content: center;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-brand-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}

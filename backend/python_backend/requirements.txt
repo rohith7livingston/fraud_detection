@@ -2,3 +2,7 @@ flask
 joblib
 pandas
 scikit-learn
+lime
+numpy
+pydantic  # ✨ NEW: For data validation
+python-dotenv  # ✨ NEW: For .env file support

@@ -1,0 +1,233 @@
+/* ✨ This file now ONLY contains styles for the Dashboard and its child components. */
+/* Global styles are in `src/index.css`. */
+
+.dashboard-container {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.dashboard-header h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--color-brand-purple), var(--color-brand-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-header p {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+}
+
+.error-banner {
+    background-color: var(--color-bg-fraud);
+    color: var(--color-brand-pink);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+    border: 1px solid var(--color-border-fraud);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(350px, 450px) 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+/* --- TRANSACTION LIST STYLES --- */
+.transaction-list {
+  list-style: none;
+  max-height: 550px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-top: -0.5rem;
+}
+.transaction-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--color-border);
+  transition: all 0.2s ease-out;
+}
+.transaction-list li:hover {
+  background-color: var(--color-background-light);
+  transform: translateX(5px);
+}
+.transaction-list li.selected {
+  background-color: var(--color-background-light);
+  border-color: var(--color-brand-purple);
+}
+.tx-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tx-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tx-info .light-text {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+.tx-time {
+  font-size: 0.8rem;
+  color: var(--color-text-disabled);
+  margin-top: 0.25rem;
+}
+.status-icon { font-size: 1.5rem; }
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background-color: var(--color-background-light);
+}
+
+.status-icon.clean, .status-badge.clean { color: var(--status-clean); }
+.status-badge.clean { background-color: var(--color-bg-clean); }
+
+.status-icon.fraud, .status-badge.fraud { color: var(--status-fraud); }
+.status-badge.fraud { background-color: var(--color-bg-fraud); }
+
+.status-icon.pending, .status-badge.pending { color: var(--status-pending); }
+.status-badge.pending { background-color: var(--color-bg-pending); }
+
+
+/* --- TRANSACTION DETAIL STYLES --- */
+.detail-card {
+  position: sticky;
+  top: 2rem;
+  animation: fadeIn 0.5s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.empty-state-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--color-text-disabled);
+  text-align: center;
+}
+.empty-state-detail h3 {
+  margin-top: 1.5rem;
+  color: var(--color-text-secondary);
+  font-size: 1.2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: var(--color-background-light);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--color-border);
+}
+.stat-card.clean { border-left-color: var(--status-clean); }
+.stat-card.fraud { border-left-color: var(--status-fraud); }
+.stat-card .stat-icon { font-size: 1.75rem; }
+.stat-card.clean .stat-icon { color: var(--status-clean); }
+.stat-card.fraud .stat-icon { color: var(--status-fraud); }
+.stat-card .stat-info { display: flex; flex-direction: column; }
+.stat-card .stat-info span {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+.stat-card .stat-info strong {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.detail-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+.detail-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.detail-section ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.detail-section ul li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+.ai-explanation ul li {
+  background-color: var(--color-background-light);
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border-left: 3px solid;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+}
+.ai-explanation li.reason-fraud { border-color: var(--status-fraud); color: var(--color-text-primary); }
+.ai-explanation li.reason-clean { border-color: var(--status-clean); color: var(--color-text-secondary); }
+
+.review-actions, .review-complete { text-align: center; }
+.review-actions p, .review-complete p {
+  margin-bottom: 1.5rem;
+  color: var(--color-text-secondary);
+}
+.review-actions .button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+.review-complete {
+  background-color: var(--color-background-light);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+.review-complete p strong { text-transform: capitalize; }
+
+
+/* --- RESPONSIVE STYLES --- */
+@media (max-width: 992px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .detail-card {
+    position: static;
+  }
+}

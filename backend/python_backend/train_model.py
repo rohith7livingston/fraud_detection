@@ -4,7 +4,6 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-from lime.lime_tabular import LimeTabularExplainer
 import numpy as np
 
 # Load dataset
@@ -30,14 +29,19 @@ for column in categorical_columns:
     label_encoders[column] = le  # Store the encoder
 
 # Define features and target
-X = data.drop(columns=['timestamp', 'fraud_flag'])
+features_list = [
+    "customer_id", "amount", "merchant", "transaction_type",
+    "location_from", "location_to", "customer_transaction_count",
+    "payment_method", "merchant_risk_score", "previous_location", "hour_of_day"
+]
+X = data[features_list]
 y = data['fraud_flag']
 
 # Split data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 # Train model
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
 model.fit(X_train, y_train)
 
 # Save model, encoders, and training data
@@ -46,4 +50,4 @@ joblib.dump(model, 'model/fraud_detection_model.pkl')
 joblib.dump(label_encoders, 'model/label_encoders.pkl')
 np.save('model/training_data.npy', X_train.values)  # Store training data for LIME
 
-print("✅ Model and encoders saved successfully!")
+print("✅ Model, encoders, and training data saved successfully!")

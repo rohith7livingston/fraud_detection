@@ -1,0 +1,11 @@
+timestamp,customer_id,amount,merchant,transaction_type,location_from,location_to,fraud_flag,customer_transaction_count,payment_method,merchant_risk_score,previous_location,hour_of_day
+2023-01-01 12:00:00,CUST101,50.00,MERCH001,purchase,New York,New York,0,5,Credit Card,0.2,New York,12
+2023-01-01 12:05:00,CUST102,120.50,MERCH002,purchase,London,London,0,2,Debit Card,0.1,London,12
+2023-01-01 12:10:00,CUST101,15.00,MERCH003,purchase,New York,New York,0,6,Credit Card,0.3,New York,12
+2023-01-01 13:00:00,CUST103,2500.00,MERCH004,transfer,San Francisco,Tokyo,1,1,Wire Transfer,0.9,San Francisco,13
+2023-01-02 09:30:00,CUST102,75.00,MERCH001,purchase,London,London,0,3,Debit Card,0.2,London,9
+2023-01-02 14:00:00,CUST104,30.00,MERCH005,atm_withdrawal,Paris,Paris,0,10,Debit Card,0.5,Paris,14
+2023-01-02 14:02:00,CUST104,950.00,MERCH006,purchase,Paris,Instanbul,1,11,Credit Card,0.8,Paris,14
+2023-01-03 18:45:00,CUST101,200.00,MERCH002,purchase,New York,New York,0,7,Credit Card,0.1,New York,18
+2023-01-03 21:00:00,CUST105,10.00,MERCH007,subscription,Online,Online,0,20,PayPal,0.05,Online,21
+2023-01-04 03:15:00,CUST103,1200.00,MERCH008,purchase,Tokyo,Mexico City,1,2,Credit Card,0.95,Tokyo,3

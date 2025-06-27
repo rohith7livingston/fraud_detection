@@ -1,0 +1,2105 @@
+`.env`
+
+```
+# .env.local for React frontend
+VITE_API_BASE_URL=/api
+```
+
+`code.txt`
+
+```
+
+```
+
+`eslint.config.js`
+
+```javascript
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs['recommended-latest'],
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+
+```
+
+`index.html`
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+```
+
+`src/App.css`
+
+```css
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+```
+
+`src/App.jsx`
+
+```javascript
+import { Toaster } from 'react-hot-toast';
+import Dashboard from './Dashboard';
+
+function App() {
+  return (
+    <>
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: '#1A1A2A',
+            color: '#F0F0F5',
+            border: '1px solid #2A2A3A',
+          },
+        }}
+      />
+      <Dashboard />
+    </>
+  );
+}
+
+export default App;
+```
+
+`src/components/Spinner.jsx`
+
+```javascript
+import React from 'react';
+
+const Spinner = () => (
+    <div className="spinner-container">
+        <div className="spinner"></div>
+    </div>
+);
+
+export default Spinner;
+```
+
+`src/components/TransactionDetail.jsx`
+
+```javascript
+import React from 'react';
+import { 
+    FiThumbsUp, FiThumbsDown, FiArrowRight, FiUser, FiMapPin, 
+    FiCreditCard, FiBarChart2, FiCpu, FiMessageSquare, FiAlertTriangle, FiCheckCircle 
+} from 'react-icons/fi';
+import Spinner from './Spinner';
+
+const TransactionDetail = ({ data, onUpdateStatus, isLoading }) => {
+    if (isLoading) {
+        return <div className="card detail-card"><Spinner /></div>
+    }
+
+    if (!data) {
+        return (
+            <div className="card detail-card">
+                <div className="empty-state-detail">
+                    <FiBarChart2 size={48} />
+                    <h3>Awaiting Selection</h3>
+                    <p>Select a transaction from the list to see its details and AI analysis.</p>
+                </div>
+            </div>
+        );
+    }
+    
+    const { selected_transaction: tx } = data;
+
+    const StatCard = ({ label, value, icon, className = '' }) => (
+        <div className={`stat-card ${className}`}>
+            <div className="stat-icon">{icon}</div>
+            <div className="stat-info">
+                <span>{label}</span>
+                <strong>{value}</strong>
+            </div>
+        </div>
+    );
+
+    const aiExplanation = tx.explanation ? tx.explanation.split(' | ').map(e => e.trim()) : [];
+
+    return (
+        <div className="card detail-card">
+            <h3 className="card-title">Analysis for Transaction #{tx.id}</h3>
+            
+            <div className="stats-grid">
+                <StatCard label="Amount" value={`$${parseFloat(tx.amount).toFixed(2)}`} icon={<FiBarChart2 />} />
+                <StatCard 
+                    label="AI Prediction" 
+                    value={tx.fraud_flag === 1 ? 'Fraud Risk' : 'Clean'} 
+                    icon={tx.fraud_flag === 1 ? <FiAlertTriangle /> : <FiCheckCircle />}
+                    className={tx.fraud_flag === 1 ? 'fraud' : 'clean'}
+                />
+            </div>
+
+            <div className="detail-section">
+                <h4><FiMessageSquare /> Transaction Info</h4>
+                <ul>
+                    <li><FiUser /> <span><strong>Customer:</strong> {tx.customer_id}</span></li>
+                    <li><FiMapPin /> <span><strong>Location:</strong> {tx.location_from} <FiArrowRight size={14} /> {tx.location_to}</span></li>
+                    <li><FiCreditCard /> <span><strong>Payment:</strong> {tx.payment_method}</span></li>
+                </ul>
+            </div>
+
+            <div className="detail-section ai-explanation">
+                <h4><FiCpu /> AI Reasoning</h4>
+                {aiExplanation.length > 0 ? (
+                    <ul>{aiExplanation.map((reason, i) => <li key={i}>{reason}</li>)}</ul>
+                ) : <p>No detailed explanation available.</p>}
+            </div>
+            
+            <div className="detail-section">
+                {tx.status === 'pending' ? (
+                    <div className="review-actions">
+                        <h4>Manual Review Required</h4>
+                        <p>Is the AI prediction correct? Please verify this transaction.</p>
+                        <div className="button-group">
+                            <button className="button button-approve" onClick={() => onUpdateStatus(tx.id, 'clean')}>
+                                <FiThumbsUp /> Approve (Clean)
+                            </button>
+                            <button className="button button-deny" onClick={() => onUpdateStatus(tx.id, 'fraud')}>
+                                <FiThumbsDown /> Deny (Fraud)
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="review-complete">
+                        <h4>Review Complete</h4>
+                        <p>This transaction has been manually verified as <strong>{tx.status}</strong>.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default TransactionDetail;
+```
+
+`src/components/TransactionForm.jsx`
+
+```javascript
+import React, { useState } from 'react';
+import { FiSend } from 'react-icons/fi'; // Import the icon
+
+const TransactionForm = ({ onSubmit, isLoading }) => { // Pass isLoading prop
+    const [formData, setFormData] = useState({
+        customer_id: 'CUST404',
+        amount: '1250.75',
+        merchant: 'MERCH808',
+        transaction_type: 'purchase',
+        location_from: 'New York',
+        location_to: 'London',
+        previous_location: 'New York',
+        customer_transaction_count: '3',
+        payment_method: 'Credit Card',
+        merchant_risk_score: '0.85',
+        hour_of_day: '2',
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const processedData = {
+            ...formData,
+            amount: parseFloat(formData.amount),
+            customer_transaction_count: parseInt(formData.customer_transaction_count, 10),
+            merchant_risk_score: parseFloat(formData.merchant_risk_score),
+            hour_of_day: parseInt(formData.hour_of_day, 10),
+        };
+        onSubmit(processedData);
+    };
+
+    return (
+        <div className="card">
+            <h3 className="card-title"><FiSend /> Simulate New Transaction</h3>
+            <form onSubmit={handleSubmit} className="transaction-form">
+                <div className="form-group">
+                    <label>Amount</label>
+                    <input type="number" step="0.01" name="amount" value={formData.amount} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                    <label>Merchant</label>
+                    <input type="text" name="merchant" value={formData.merchant} onChange={handleChange} required />
+                </div>
+                 <div className="form-group">
+                    <label>Location (From)</label>
+                    <input type="text" name="location_from" value={formData.location_from} onChange={handleChange} required />
+                </div>
+                <div className="form-group">
+                    <label>Location (To)</label>
+                    <input type="text" name="location_to" value={formData.location_to} onChange={handleChange} required />
+                </div>
+                <div className="form-group full-width">
+                    <label>Previous Location</label>
+                    <input type="text" name="previous_location" value={formData.previous_location} onChange={handleChange} required />
+                </div>
+                {/* ✨ FIX: Add icon and pass disabled prop */}
+                <button type="submit" className="button button--primary" disabled={isLoading}>
+                    <FiSend /> 
+                    {isLoading ? 'Processing...' : 'Process Transaction'}
+                </button>
+            </form>
+        </div>
+    );
+};
+
+export default TransactionForm; 
+```
+
+`src/components/TransactionList.jsx`
+
+```javascript
+import React from 'react';
+import { FiCheckCircle, FiXCircle, FiAlertTriangle, FiInbox, FiClock } from 'react-icons/fi';
+import Spinner from './Spinner';
+
+const TransactionList = ({ transactions, onSelectTransaction, selectedId, isLoading }) => {
+
+    const formatDate = (dateString) => {
+        const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateString).toLocaleTimeString('en-US', options);
+    };
+    
+    const getStatusInfo = (status, fraudFlag) => {
+        if (status === 'clean') return { icon: <FiCheckCircle />, className: 'clean' };
+        if (status === 'fraud') return { icon: <FiXCircle />, className: 'fraud' };
+        if (fraudFlag === 1) return { icon: <FiAlertTriangle />, className: 'fraud' }; // Pending, but high risk
+        return { icon: <FiClock />, className: 'pending' };
+    };
+
+    if (isLoading) {
+        return <div className="card"><Spinner /></div>;
+    }
+
+    return (
+        <div className="card">
+            <h3 className="card-title"><FiInbox /> Transaction Queue</h3>
+            <ul className="transaction-list">
+                {transactions.length > 0 ? (
+                    transactions.map(tx => {
+                        const statusInfo = getStatusInfo(tx.status, tx.fraud_flag);
+                        return (
+                            <li 
+                                key={tx.id} 
+                                onClick={() => onSelectTransaction(tx.id)}
+                                className={tx.id === selectedId ? 'selected' : ''}
+                            >
+                                <div className={`status-icon ${statusInfo.className}`}>{statusInfo.icon}</div>
+                                <div className="tx-info">
+                                    <strong>${parseFloat(tx.amount).toFixed(2)} <span className="light-text">at</span> {tx.merchant}</strong>
+                                    <span className="tx-time">{formatDate(tx.timestamp)}</span>
+                                </div>
+                                <div className={`status-badge ${statusInfo.className}`}>
+                                    {tx.status}
+                                </div>
+                            </li>
+                        )
+                    })
+                ) : (
+                    <p className="empty-state">No transactions found.</p>
+                )}
+            </ul>
+        </div>
+    );
+};
+
+export default TransactionList; 
+```
+
+`src/Dashboard.css`
+
+```css
+Import the theme variables and base styles
+@import './LandingPage.css';
+
+body {
+  padding: 2rem;
+}
+
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.dashboard-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--color-purple), var(--color-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-header p {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+}
+
+.error-banner {
+    background-color: #5d1a2a;
+    color: #ffc0cb;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+    border: 1px solid var(--color-pink);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 450px 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.card {
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* Transaction Form */
+/* ... other .transaction-form styles ... */
+
+.transaction-form { 
+  display: grid; /* Change from flex to grid */
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.transaction-form .full-width {
+    grid-column: 1 / -1; /* Make this item span both columns */
+}
+
+.transaction-form button {
+  grid-column: 1 / -1; /* Make the button span both columns too */
+  margin-top: 0.5rem;
+}
+
+
+/* Transaction List */
+.transaction-list {
+  list-style: none;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.transaction-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--color-border);
+}
+.transaction-list li:hover {
+  background-color: rgba(138, 66, 244, 0.1);
+}
+.transaction-list li.selected {
+  background-color: rgba(138, 66, 244, 0.2);
+  border-left: 3px solid var(--color-purple);
+}
+.tx-info {
+  display: flex;
+  flex-direction: column;
+}
+.tx-amount { font-weight: 600; font-size: 1rem; }
+.tx-time { font-size: 0.8rem; color: var(--color-text-secondary); }
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.status-pending { background-color: #4a4a5a; color: #e0e0e0; }
+.status-clean { background-color: #1f4e4a; color: var(--color-cyan); }
+.status-fraud { background-color: #5d1a2a; color: var(--color-pink); }
+
+/* Transaction Detail */
+.transaction-detail-view .detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+.detail-grid div {
+    background-color: var(--color-background);
+    padding: 0.8rem;
+    border-radius: 6px;
+}
+.ai-explanation, .review-actions, .customer-history {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+.ai-explanation h4, .review-actions h4, .customer-history h4 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-secondary);
+}
+.text-fraud { color: var(--color-pink); font-weight: bold; }
+.text-clean { color: var(--color-cyan); font-weight: bold; }
+.review-actions .button { margin-right: 1rem; }
+.button-approve {
+    background: linear-gradient(90deg, #1f4e4a, #27c93f);
+    color: white;
+}
+.button-deny {
+    background: linear-gradient(90deg, #5d1a2a, var(--color-pink));
+    color: white;
+}
+.customer-history ul { list-style: none; }
+.customer-history li { display: flex; justify-content: space-between; padding: 0.5rem; border-radius: 4px; }
+.customer-history li:nth-child(odd) { background-color: var(--color-background); }
+.status-badge-small { font-size: 0.7rem; text-transform: capitalize; padding: 0.1rem 0.4rem; border-radius: 10px; }
+.status-badge-small.clean { background-color: #1f4e4a; color: var(--color-cyan); }
+.status-badge-small.fraud { background-color: #5d1a2a; color: var(--color-pink); }
+.status-badge-small.pending { background-color: #4a4a5a; color: #e0e0e0; }
+
+@media (max-width: 992px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+`src/Dashboard.jsx`
+
+```javascript
+import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import * as api from './services/api'; // Centralized API service
+import TransactionList from './components/TransactionList';
+import TransactionDetail from './components/TransactionDetail';
+import TransactionForm from './components/TransactionForm';
+
+const Dashboard = () => {
+    // State management for the entire dashboard
+    const [transactions, setTransactions] = useState([]);
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [isLoading, setIsLoading] = useState(true); // For the main transaction list
+    const [isDetailLoading, setIsDetailLoading] = useState(false); // For the detail panel
+    const [error, setError] = useState(''); // For persistent errors (e.g., initial load failure)
+
+    /**
+     * Fetches all transactions from the backend.
+     * Called on initial load and after any action that changes the list.
+     */
+    const fetchTransactions = async () => {
+        try {
+            setError('');
+            const response = await api.getTransactions();
+            setTransactions(response.data.transactions || []);
+        } catch (err) {
+            console.error("Error fetching transactions:", err);
+            // Set a persistent error message if the initial load fails
+            setError('Failed to load transactions. Is the backend server running?');
+            setTransactions([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // useEffect hook to run fetchTransactions once when the component mounts.
+    useEffect(() => {
+        fetchTransactions();
+    }, []);
+
+    /**
+     * Fetches the detailed data for a single transaction when it's selected from the list.
+     * @param {number} id - The ID of the transaction to fetch.
+     */
+    const handleSelectTransaction = async (id) => {
+        if (selectedTransaction?.selected_transaction?.id === id) return; // Don't re-fetch if already selected
+
+        setIsDetailLoading(true);
+        setSelectedTransaction(null); // Clear previous selection immediately for better UX
+
+        try {
+            const response = await api.getTransactionDetails(id);
+            setSelectedTransaction(response.data);
+            setError(''); // Clear any previous errors on success
+        } catch (err) {
+            console.error("Error fetching transaction details:", err);
+            toast.error(`Failed to load details for transaction #${id}.`);
+        } finally {
+            setIsDetailLoading(false);
+        }
+    };
+
+    /**
+     * Handles the submission of a new transaction from the form.
+     * @param {object} transactionData - The data for the new transaction.
+     */
+    const handleNewTransaction = async (transactionData) => {
+        const toastId = toast.loading('Processing new transaction...');
+        try {
+            const response = await api.processNewTransaction(transactionData);
+            // Use the fraud_flag from the standardized response
+            toast.success(`Transaction processed! AI says: ${response.data.fraud_flag === 1 ? 'Fraud Risk' : 'Clean'}`, { id: toastId });
+            fetchTransactions(); // Refresh the list to show the new transaction
+        } catch (err) {
+            // Display a more specific error message from the backend if available
+            const errorMsg = err.response?.data?.error || 'Failed to process transaction.';
+            console.error("Error processing transaction:", err);
+            toast.error(errorMsg, { id: toastId });
+        }
+    };
+    
+    /**
+     * Handles the manual review action to update a transaction's status.
+     * @param {number} id - The ID of the transaction to update.
+     * @param {string} status - The new status ('clean' or 'fraud').
+     */
+    const handleUpdateStatus = async (id, status) => {
+        const toastId = toast.loading(`Marking transaction as ${status}...`);
+        try {
+            await api.updateTransactionStatus(id, status);
+            toast.success(`Transaction #${id} marked as ${status}.`, { id: toastId });
+            
+            // Refresh both the list and the detail view for consistency
+            fetchTransactions();
+            if (selectedTransaction?.selected_transaction?.id === id) {
+                handleSelectTransaction(id); // Re-fetch details to show the updated status in the detail view
+            }
+        } catch (err) {
+             console.error("Error updating status:", err);
+             toast.error(`Failed to update status for transaction #${id}.`, { id: toastId });
+        }
+    };
+
+    return (
+        <div className="dashboard-container">
+            <header className="dashboard-header">
+                <h1>Fraud Detection Dashboard</h1>
+                <p>Real-time monitoring and analysis powered by a "Google AI" consistent stack</p>
+            </header>
+            
+            {/* Display a persistent error banner if the initial load fails */}
+            {error && <div className="error-banner">{error}</div>}
+
+            <div className="dashboard-grid">
+                {/* Column 1: Form and Transaction List */}
+                <div className="grid-col-1">
+                    <TransactionForm onSubmit={handleNewTransaction} />
+                    <TransactionList 
+                        transactions={transactions} 
+                        onSelectTransaction={handleSelectTransaction}
+                        selectedId={selectedTransaction?.selected_transaction?.id}
+                        isLoading={isLoading}
+                    />
+                </div>
+                {/* Column 2: Transaction Detail View */}
+                <div className="grid-col-2">
+                    <TransactionDetail 
+                        data={selectedTransaction} 
+                        onUpdateStatus={handleUpdateStatus}
+                        isLoading={isDetailLoading}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Dashboard;
+```
+
+`src/index.css`
+
+```css
+/* --- GOOGLE FONT IMPORT --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* --- THEME & CSS VARIABLES --- */
+:root {
+  --font-primary: 'Inter', sans-serif;
+  --color-background-dark: #0A0A10;
+  --color-background-med: #10101E;
+  --color-background-light: #1A1A2A;
+  --color-border: #2A2A3A;
+  
+  --color-text-primary: #F0F0F5;
+  --color-text-secondary: #A0A0B0;
+  --color-text-disabled: #606070;
+
+  --color-brand-purple: #8A42F4;
+  --color-brand-pink: #E8467F;
+  --color-accent-cyan: #46E8D8;
+
+  --status-clean: #22C55E; /* Green */
+  --status-fraud: #EF4444; /* Red */
+  --status-pending: #EAB308; /* Yellow */
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.15);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+}
+
+/* --- BASE & GLOBAL STYLES --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-background-dark);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: clamp(1rem, 5vw, 3rem);
+}
+
+/* --- LAYOUT & MAIN CONTAINER --- */
+.dashboard-container {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.dashboard-header h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--color-brand-purple), var(--color-brand-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.dashboard-header p {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(350px, 420px) 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+/* --- GENERAL PURPOSE CARD --- */
+.card {
+  background-color: var(--color-background-med);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+}
+.card-title {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-size: 1.1rem; font-weight: 600;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* --- BUTTONS --- */
+.button {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.5rem; padding: 0.6rem 1.25rem;
+  border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+  border: 1px solid transparent; cursor: pointer;
+  text-decoration: none; transition: all 0.2s ease;
+}
+.button:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.button--primary {
+  background: linear-gradient(90deg, var(--color-brand-purple), var(--color-brand-pink));
+  color: white;
+}
+.button-approve { background-color: var(--status-clean); color: white; border-color: var(--status-clean); }
+.button-deny { background-color: var(--status-fraud); color: white; border-color: var(--status-fraud); }
+
+/* --- FORMS --- */
+.transaction-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group label { font-size: 0.8rem; font-weight: 500; color: var(--color-text-secondary); }
+.form-group input {
+  background-color: var(--color-background-light); border: 1px solid var(--color-border);
+  border-radius: 6px; padding: 0.7rem; color: var(--color-text-primary);
+  font-size: 0.9rem; font-family: var(--font-primary);
+  transition: all 0.2s ease;
+}
+.form-group input:focus {
+  outline: none; border-color: var(--color-brand-purple);
+  box-shadow: 0 0 0 3px rgba(138, 66, 244, 0.3);
+}
+.transaction-form .button--primary { grid-column: 1 / -1; margin-top: 0.5rem; }
+
+/* --- TRANSACTION LIST --- */
+.transaction-list {
+  list-style: none; max-height: 550px; overflow-y: auto;
+  padding-right: 0.5rem; margin-top: -0.5rem;
+}
+.transaction-list li {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 1rem; padding: 1rem;
+  border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+  border-bottom: 1px solid var(--color-border);
+  transition: all 0.2s ease-out;
+}
+.transaction-list li:hover {
+  background-color: var(--color-background-light); transform: translateX(5px);
+}
+.transaction-list li.selected {
+  background-color: var(--color-background-light);
+  border-color: var(--color-brand-purple);
+}
+.tx-info { display: flex; flex-direction: column; }
+.tx-info .light-text { color: var(--color-text-secondary); font-weight: 400; font-size: 0.9rem; }
+.tx-time { font-size: 0.8rem; color: var(--color-text-disabled); margin-top: 0.25rem; }
+.status-icon { font-size: 1.5rem; }
+.status-badge {
+  padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;
+  font-weight: 600; text-transform: capitalize;
+}
+.status-icon.clean, .status-badge.clean { color: var(--status-clean); }
+.status-icon.fraud, .status-badge.fraud { color: var(--status-fraud); }
+.status-icon.pending, .status-badge.pending { color: var(--status-pending); }
+
+/* --- TRANSACTION DETAIL --- */
+.detail-card { position: sticky; top: 2rem; animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.empty-state-detail {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 400px; color: var(--color-text-disabled); text-align: center;
+}
+.empty-state-detail h3 { margin-top: 1.5rem; color: var(--color-text-secondary); font-size: 1.2rem; }
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.stat-card {
+  display: flex; align-items: center; gap: 1rem;
+  background-color: var(--color-background-light); padding: 1rem; border-radius: 8px;
+  border-left: 4px solid var(--color-border);
+}
+.stat-card.clean { border-left-color: var(--status-clean); }
+.stat-card.fraud { border-left-color: var(--status-fraud); }
+.stat-card .stat-icon { font-size: 1.75rem; }
+.stat-card.clean .stat-icon { color: var(--status-clean); }
+.stat-card.fraud .stat-icon { color: var(--status-fraud); }
+.stat-card .stat-info { display: flex; flex-direction: column; }
+.stat-card .stat-info span { font-size: 0.8rem; color: var(--color-text-secondary); }
+.stat-card .stat-info strong { font-size: 1.25rem; font-weight: 700; }
+
+.detail-section { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border); }
+.detail-section h4 {
+  display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem;
+  color: var(--color-text-secondary); margin-bottom: 1rem;
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.detail-section ul { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.detail-section ul li { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+.ai-explanation ul li { background-color: var(--color-background-light); padding: 0.5rem 0.75rem; border-radius: 4px; }
+.ai-explanation ul li::before { content: '›'; color: var(--color-brand-purple); font-weight: 700; margin-right: 0.5rem; }
+
+.review-actions, .review-complete { text-align: center; }
+.review-actions p, .review-complete p { margin-bottom: 1.5rem; color: var(--color-text-secondary); }
+.review-actions .button-group { display: flex; gap: 1rem; justify-content: center; }
+.review-complete { background-color: var(--color-background-light); padding: 1.5rem; border-radius: 8px; }
+
+/* --- SPINNER & MISC --- */
+.spinner-container { padding: 3rem 0; display: flex; justify-content: center; }
+.spinner {
+  width: 40px; height: 40px; border: 4px solid var(--color-border);
+  border-top-color: var(--color-brand-purple); border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-banner {
+    background-color: #5d1a2a; color: #ffc0cb; padding: 1rem;
+    border-radius: 8px; margin-bottom: 2rem; text-align: center;
+    border: 1px solid var(--color-brand-pink);
+}
+
+/* --- RESPONSIVE STYLES --- */
+@media (max-width: 992px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .detail-card { position: static; }
+}
+```
+
+`src/LandingPage.css`
+
+```css
+
+/* --- GOOGLE FONT IMPORT --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+/* --- CSS VARIABLES (THEME) --- */
+:root {
+  --font-primary: 'Poppins', sans-serif;
+  --color-background: #0B0B15;
+  --color-background-secondary: #10101E;
+  --color-text-primary: #E0E0E0;
+  --color-text-secondary: #A0A0B0;
+  --color-border: #2A2A3A;
+  --color-purple: #8A42F4;
+  --color-pink: #E8467F;
+  --color-cyan: #46E8D8;
+  --glow-shadow: 0 0 15px rgba(138, 66, 244, 0.4), 0 0 25px rgba(138, 66, 244, 0.2);
+  --section-padding: 6rem;
+}
+
+/* --- BASE & GLOBAL STYLES --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: block;
+  position: relative;
+}
+
+/* --- UTILITY CLASSES --- */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section {
+  padding: var(--section-padding) 0;
+  width: 100%;
+}
+
+.section__heading {
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.section__subheading {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 2rem;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, var(--color-purple), var(--color-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.fade-in-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- BUTTONS --- */
+.button {
+  display: inline-block;
+  padding: 0.7rem 1.7rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.button--primary {
+  background: linear-gradient(90deg, var(--color-purple), var(--color-pink));
+  color: white;
+}
+
+.button--primary:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--glow-shadow);
+}
+
+.button--secondary {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.button--secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-purple);
+}
+
+.button--large {
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  background-color: rgba(11, 11, 21, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+  padding: 1rem 0;
+}
+
+.navbar__container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.navbar__logo-icon {
+  color: var(--color-purple);
+}
+
+.navbar__nav {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.navbar__link {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.navbar__link:hover {
+  color: var(--color-text-primary);
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar__menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.hamburger-line {
+  display: block;
+  width: 25px;
+  height: 2px;
+  background-color: white;
+  margin: 5px 0;
+}
+
+/* --- HERO SECTION --- */
+.hero-section {
+  background: radial-gradient(circle at 50% 0%, rgba(138, 66, 244, 0.15), transparent 40%), var(--color-background);
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.hero-section__container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 4rem;
+}
+
+.hero-section__title {
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 1s ease-out;
+}
+
+.hero-section__subtitle {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+  max-width: 500px;
+  animation: fadeInUp 1s ease-out 0.2s;
+  animation-fill-mode: both;
+}
+
+.hero-section__cta-group {
+  display: flex;
+  gap: 1rem;
+  animation: fadeInUp 1s ease-out 0.4s;
+  animation-fill-mode: both;
+}
+
+.hero-section__image-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.hero-section__image {
+  max-width: 100%;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* --- TRUSTED BY SECTION --- */
+.trusted-by-section__logos {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.logo-placeholder {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #666;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.logo-placeholder:hover {
+  opacity: 1;
+}
+
+/* --- PRODUCTS / USE CASES SECTION --- */
+.products-section {
+  background-color: var(--color-background-secondary);
+}
+
+.products-section__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.product-card {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--color-purple);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.product-card__icon {
+  font-size: 2.5rem;
+  color: var(--color-purple);
+  margin-bottom: 1.5rem;
+}
+
+.product-card__title {
+  font-size: 1.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.product-card__description {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+.read-more-link {
+  color: var(--color-purple);
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  transition: color 0.3s;
+}
+
+.read-more-link:hover {
+  color: var(--color-pink);
+}
+
+/* --- STATS SECTION --- */
+.stats-section {
+  background-color: #06060D;
+}
+
+.stats-section__container {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.stat-item__number {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  display: block;
+  color: var(--color-cyan);
+}
+
+.stat-item__label {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+
+/* --- FEATURES SECTION --- */
+.features-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-padding);
+}
+.feature-item {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 4rem;
+}
+.feature-item__text-content h2 {
+    text-align: left;
+}
+.feature-item__image-wrapper img {
+    width: 100%;
+    border-radius: 12px;
+}
+.feature-item--reversed .feature-item__text-content {
+    order: 2;
+}
+
+/* --- DEVELOPER SECTION --- */
+.developer-section {
+  background-color: var(--color-background-secondary);
+}
+.terminal {
+  background-color: #1E1E2E;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+  margin-top: 3rem;
+  text-align: left;
+}
+.terminal__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #2A2A3A;
+  padding: 0.75rem 1rem;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+.terminal__dots span {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.terminal__dots span:nth-child(1) { background-color: #FF5F56; }
+.terminal__dots span:nth-child(2) { background-color: #FFBD2E; }
+.terminal__dots span:nth-child(3) { background-color: #27C93F; }
+.terminal__title {
+  color: var(--color-text-secondary);
+  font-family: monospace;
+}
+.terminal__body {
+  padding: 1.5rem;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.code-purple { color: #C792EA; }
+.code-lightblue { color: #82AAFF; }
+.code-yellow { color: #FFCB6B; }
+.code-green { color: #C3E88D; }
+.code-orange { color: #F78C6C; }
+.code-gray { color: #676E95; }
+
+/* --- CTA BANNER --- */
+.cta-banner-section {
+  background: linear-gradient(90deg, var(--color-purple), var(--color-pink));
+}
+
+.cta-banner-section__container {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.cta-banner-section__title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.cta-banner-section__subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2rem;
+}
+
+.cta-banner-section .button--primary {
+    background: white;
+    color: var(--color-purple);
+}
+
+/* --- FOOTER --- */
+.footer {
+  background-color: var(--color-background-secondary);
+  padding: 4rem 0 2rem;
+  border-top: 1px solid var(--color-border);
+}
+.footer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+.footer__column--about {
+  grid-column: 2 / -1;
+  @media (min-width: 768px) {
+    grid-column: span 1 / span 1;
+  }
+}
+.footer__heading {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+.footer__column p, .footer__links li {
+  color: var(--color-text-secondary);
+  margin-bottom: 0.75rem;
+}
+.footer__links {
+  list-style: none;
+}
+.footer__links a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+.footer__links a:hover {
+  color: var(--color-purple);
+}
+.footer__bottom {
+  border-top: 1px solid var(--color-border);
+  padding-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+.footer__socials {
+  display: flex;
+  gap: 1rem;
+}
+.footer__socials a {
+  color: var(--color-text-secondary);
+  font-size: 1.2rem;
+  transition: color 0.3s ease;
+}
+.footer__socials a:hover {
+  color: var(--color-purple);
+}
+.icon { color: inherit; }
+
+/* --- RESPONSIVE STYLES --- */
+@media (max-width: 992px) {
+  .hero-section__container, .feature-item {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-section__content {
+    order: 2;
+  }
+  .hero-section__image-wrapper {
+    order: 1;
+    margin-bottom: 3rem;
+  }
+  .hero-section__cta-group {
+    justify-content: center;
+  }
+  .hero-section__title, .hero-section__subtitle, .feature-item__text-content h2 {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+  .feature-item--reversed .feature-item__text-content {
+    order: 0;
+  }
+  .feature-item__image-wrapper {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --section-padding: 4rem;
+  }
+  .navbar__menu-toggle {
+    display: block;
+    z-index: 101;
+  }
+  .navbar__actions .button--primary {
+    display: none;
+  }
+  .navbar__nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 70%;
+    height: 100vh;
+    background-color: var(--color-background-secondary);
+    flex-direction: column;
+    padding: 6rem 2rem 2rem;
+    gap: 2rem;
+    transition: right 0.4s ease-in-out;
+    z-index: 100;
+  }
+  .navbar__nav.is-open {
+    right: 0;
+  }
+  .footer__bottom {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .footer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .footer__column--about {
+    grid-column: 1 / -1;
+  }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(11, 11, 21, 0.6); /* Use theme background color with alpha */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  
+  /* THIS IS THE BLUR EFFECT */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); /* For Safari */
+  
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  background-color: var(--color-background-secondary);
+  padding: 2.5rem;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), var(--glow-shadow);
+  border: 1px solid var(--color-border);
+  animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.modal-close-button:hover {
+  color: var(--color-text-primary);
+  transform: scale(1.1);
+}
+
+.modal-title {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.75rem;
+}
+
+.modal-subtitle {
+  color: var(--color-text-secondary);
+  margin-top: 0;
+  margin-bottom: 2rem;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px; /* Slightly rounded corners */
+  padding: 0.8rem 1rem;
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--color-purple);
+  box-shadow: 0 0 0 3px rgba(138, 66, 244, 0.3); /* Purple glow */
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.modal-submit-button {
+  width: 100%;
+  margin-top: 0.5rem;
+  /* Re-uses existing button styles */
+}
+
+
+/* --- MODAL ANIMATIONS --- */
+@keyframes fadeIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(8px); }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- RESPONSIVE STYLES --- */
+@media (max-width: 992px) {
+  /* your responsive styles */
+}
+@media (max-width: 768px) {
+  /* your responsive styles */
+}
+```
+
+`src/LandingPage.jsx`
+
+```javascript
+import React, { useState, useEffect } from 'react';
+import './LandingPage.css';
+
+// --- Helper Components (for clean JSX) ---
+
+// A generic placeholder for icons
+const Icon = ({ name, className }) => (
+  <svg className={`icon ${className}`} viewBox="0 0 24 24" width="32" height="32">
+    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4.07-2.83 7.67-6.5 8.65A7.83 7.83 0 016 11.09V6.3l6-2.25 6 2.25v4.84z" fill="currentColor" />
+    <title>{name} icon</title>
+  </svg>
+);
+
+// --- Modal Component ---
+const DemoRequestModal = ({ isOpen, onClose, onSubmit }) => {
+  const [email, setEmail] = useState('');
+  const [description, setDescription] = useState('');
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (email && description) {
+      onSubmit({ email, description });
+      // Reset form for next time
+      setEmail('');
+      setDescription('');
+    } else {
+      alert("Please fill out all fields.");
+    }
+  };
+
+  // Close modal when clicking on the overlay, but not on the content
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-content">
+        <button className="modal-close-button" onClick={onClose}>×</button>
+        <h2 className="modal-title">Request a Demo</h2>
+        <p className="modal-subtitle">Our team will get back to you shortly to schedule a personalized demo.</p>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-group">
+            <label htmlFor="email">Work Email</label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="description">Tell us about your needs</label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g., We need to reduce credit card fraud..."
+              rows="4"
+              required
+            ></textarea>
+          </div>
+          <button type="submit" className="button button--primary button--large modal-submit-button">Submit</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
+// --- Main Landing Page Component ---
+const LandingPage = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Effect for scroll-based animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const targets = document.querySelectorAll('.fade-in-section');
+    targets.forEach((target) => observer.observe(target));
+
+    return () => targets.forEach((target) => observer.unobserve(target));
+  }, []);
+
+  // Effect to handle body scroll and blur when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+
+    // Cleanup function to remove the class if the component unmounts
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [isModalOpen]);
+
+
+  const handleDemoSubmit = ({ email, description }) => {
+    console.log("Demo Request Submitted:", { email, description });
+    alert(`Thank you! We've received your request from ${email} and will be in touch soon.`);
+    setIsModalOpen(false); // Close the modal on successful submission
+  };
+
+  return (
+    <div className="page-wrapper">
+      {/* ===== HEADER NAVIGATION ===== */}
+      <header className="navbar">
+        <div className="container navbar__container">
+          <a href="#home" className="navbar__logo">
+            <Icon name="FraudVision Logo" className="navbar__logo-icon" />
+            <span>FraudVision AI</span>
+          </a>
+          <nav className={`navbar__nav ${isMenuOpen ? 'is-open' : ''}`}>
+            <a href="#features" className="navbar__link">Features</a>
+            <a href="#use-cases" className="navbar__link">Use Cases</a>
+            <a href="#developer" className="navbar__link">Developers</a>
+            <a href="#company" className="navbar__link">Company</a>
+          </nav>
+          <div className="navbar__actions">
+            <button className="button button--primary" onClick={() => setIsModalOpen(true)}>Request a Demo</button>
+            <button
+              className="navbar__menu-toggle"
+              aria-label="Toggle menu"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        {/* ===== HERO SECTION ===== */}
+        <section id="home" className="hero-section section">
+          <div className="container hero-section__container">
+            <div className="hero-section__content">
+              <h1 className="hero-section__title">
+                <span className="text-gradient">AI-Powered Fraud Detection</span> for Modern Finance
+              </h1>
+              <p className="hero-section__subtitle">
+                FraudVision AI delivers explainable, real-time fraud analysis based on transaction patterns, behavior modeling, and anomaly detection.
+              </p>
+              <div className="hero-section__cta-group">
+                <button className="button button--primary button--large" onClick={() => setIsModalOpen(true)}>Request a Demo</button>
+                <button className="button button--secondary button--large">Explore Use Cases</button>
+              </div>
+            </div>
+            <div className="hero-section__image-wrapper">
+              <img
+                src="./Gemini_Generated_Image_2gjsfd2gjsfd2gjs.png"
+                alt="AI-based data network visual for cyber security"
+                className="hero-section__image"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ===== TRUSTED BY SECTION ===== */}
+        <section id="trusted-by" className="trusted-by-section section fade-in-section">
+          <div className="container">
+            <h2 className="section__subheading">Inspired by Financial Leaders Worldwide</h2>
+            <div className="trusted-by-section__logos">
+              <div className="logo-placeholder">FinTrust Bank</div>
+              <div className="logo-placeholder">Jocata</div>
+              <div className="logo-placeholder">Feedzai</div>
+              <div className="logo-placeholder">sift</div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== PRODUCT CARDS SECTION ===== */}
+        <section id="features" className="products-section section fade-in-section">
+          <div className="container">
+            <h2 className="section__heading">Monitor. Detect. Prevent — in Real Time.</h2>
+            <div className="products-section__grid">
+              {[
+                { icon: 'Monitoring', title: 'Real-time Transaction Monitoring', description: 'Detect fraudulent transactions as they happen with sub-second latency.' },
+                { icon: 'Anomaly', title: 'Behavioral Anomaly Detection', description: 'Flag outliers in spending behavior using sophisticated machine learning models.' },
+                { icon: 'ExplainableAI', title: 'Explainable AI (XAI)', description: 'Transparent ML models provide clear reasoning for audit-ready results.' },
+                { icon: 'API', title: 'Scalable APIs & SDKs', description: 'Seamlessly integrate our powerful fraud detection engine with your existing backend stack.' },
+              ].map(product => (
+                <article key={product.title} className="product-card">
+                  <div className="product-card__icon">
+                    <Icon name={product.icon} />
+                  </div>
+                  <h3 className="product-card__title">{product.title}</h3>
+                  <p className="product-card__description">{product.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ===== STATS SECTION ===== */}
+        <section id="stats" className="stats-section section fade-in-section">
+          <div className="container stats-section__container">
+            <div className="stat-item">
+              <span className="stat-item__number">94.97%</span>
+              <p className="stat-item__label">Accuracy in Detection</p>
+            </div>
+            <div className="stat-item">
+              <span className="stat-item__number">91%</span>
+              <p className="stat-item__label">Latency cut</p>
+            </div>
+            <div className="stat-item">
+              <span className="stat-item__number">0+</span>
+              <p className="stat-item__label">Banks & Fintechs Onboarded</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== FEATURES WITH TEXT + IMAGE ===== */}
+        <section className="features-section section">
+            <div className="container feature-item fade-in-section">
+                <div className="feature-item__text-content">
+                    <h2 className="section__heading">Explainable Models for Compliance</h2>
+                    <p>Our "white-box" AI approach demystifies fraud scoring. Get clear, human-readable explanations for every decision, ensuring you're always ready for regulatory audits.</p>
+                </div>
+                <div className="feature-item__image-wrapper">
+                    <img src="https://placehold.co/500x400/1a1a2e/e0e0e0?text=AI+Decision+Tree" alt="Diagram of an explainable AI model" />
+                </div>
+            </div>
+            <div className="container feature-item feature-item--reversed fade-in-section">
+                <div className="feature-item__text-content">
+                    <h2 className="section__heading">Powerful Custom Rule Engines</h2>
+                    <p>Go beyond our AI models. Build, test, and deploy custom fraud rules in minutes using our intuitive interface to address your unique business logic and emerging threats.</p>
+                </div>
+                <div className="feature-item__image-wrapper">
+                    <img src="https://placehold.co/500x400/1a1a2e/e0e0e0?text=Rules+Dashboard" alt="Screenshot of the custom rule engine dashboard" />
+                </div>
+            </div>
+        </section>
+
+        {/* ===== DEVELOPER-FIRST SECTION ===== */}
+        <section id="developer" className="developer-section section fade-in-section">
+          <div className="container">
+            <h2 className="section__heading">Robust APIs for Real-Time Fraud Detection</h2>
+            <div className="terminal">
+              <div className="terminal__header">
+                <div className="terminal__dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span className="terminal__title">bash</span>
+              </div>
+              <pre className="terminal__body">
+                <code>
+                  <span className="code-gray"># Send a transaction to the detection endpoint</span>{'\n'}
+                  <span className="code-green">curl</span> -X POST https://api.fraudvision.ai/detect \<br />
+                  {'  '}-H <span className="code-orange">"Authorization: Bearer YOUR_API_KEY"</span> \<br />
+                  {'  '}-d '{"{"}{'\n'}
+                  {'    '}<span className="code-orange">"amount"</span>: <span className="code-lightblue">5000</span>,{'\n'}
+                  {'    '}<span className="code-orange">"merchant_id"</span>: <span className="code-orange">"XYZ_STORE"</span>,{'\n'}
+                  {'    '}<span className="code-orange">"user_location"</span>: <span className="code-orange">"Delhi"</span>{'\n'}
+                  {'  '}{'}'}'
+                </code>
+              </pre>
+            </div>
+          </div>
+        </section>
+        
+        {/* ===== USE CASES / BLOG SECTION ===== */}
+        <section id="use-cases" className="products-section section fade-in-section" style={{backgroundColor: 'var(--color-background)'}}>
+          <div className="container">
+            <h2 className="section__heading">Insights from the Front Lines of Fraud</h2>
+            <div className="products-section__grid">
+              {[
+                { title: "Preventing Credit Card Fraud at Scale", description: "Learn how top banks leverage our platform to block sophisticated CNP fraud schemes." },
+                { title: "How AI Flags Insider Fraud in Corporate Spending", description: "A deep dive into the behavioral patterns that help detect internal threats before they escalate." },
+                { title: "Case Study: Reducing False Positives by 40%", description: "Discover how FinTrust Bank improved customer experience by cutting down incorrect declines." },
+              ].map(post => (
+                <article key={post.title} className="product-card">
+                  <h3 className="product-card__title">{post.title}</h3>
+                  <p className="product-card__description">{post.description}</p>
+                  <a href="#" className="read-more-link">Read More →</a>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ===== FINAL CTA BANNER ===== */}
+        <section className="cta-banner-section section fade-in-section">
+          <div className="container cta-banner-section__container">
+            <h2 className="cta-banner-section__title">See FraudVision AI in Action</h2>
+            <p className="cta-banner-section__subtitle">Secure your revenue and build customer trust with the industry's leading fraud detection platform.</p>
+            <button className="button button--primary button--large" onClick={() => setIsModalOpen(true)}>Get Started Today</button>
+          </div>
+        </section>
+      </main>
+
+      {/* ===== FOOTER ===== */}
+      <footer className="footer">
+        <div className="container footer__container">
+          <div className="footer__grid">
+            <div className="footer__column footer__column--about">
+              <h4 className="footer__heading">FraudVision AI</h4>
+              <p>AI-Powered Fraud Detection at Scale. Monitor. Detect. Prevent.</p>
+            </div>
+            <div className="footer__column">
+              <h4 className="footer__heading">Product</h4>
+              <ul className="footer__links">
+                <li><a href="#">Overview</a></li>
+                <li><a href="#">Features</a></li>
+                <li><a href="#">APIs</a></li>
+                <li><a href="#">Case Studies</a></li>
+              </ul>
+            </div>
+            <div className="footer__column">
+              <h4 className="footer__heading">Resources</h4>
+              <ul className="footer__links">
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Help Center</a></li>
+                <li><a href="#">Documentation</a></li>
+                <li><a href="#">System Status</a></li>
+              </ul>
+            </div>
+             <div className="footer__column">
+              <h4 className="footer__heading">Company</h4>
+              <ul className="footer__links">
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Careers</a></li>
+                <li><a href="#">Partners</a></li>
+                <li><a href="#">Contact Us</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="footer__bottom">
+            <p>© {new Date().getFullYear()} FraudVision AI. All rights reserved.</p>
+            <div className="footer__socials">
+              <a href="#" aria-label="Twitter"><Icon name="Twitter"/></a>
+              <a href="#" aria-label="LinkedIn"><Icon name="LinkedIn"/></a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* ===== Render the modal ===== */}
+      <DemoRequestModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSubmit={handleDemoSubmit}
+      />
+    </div>
+  );
+};
+
+export default LandingPage;
+```
+
+`src/main.jsx`
+
+```javascript
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+import './index.css';
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+```
+
+`src/services/api.js`
+
+```javascript
+// src/services/api.js
+import axios from 'axios';
+
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+});
+
+// ✨ Centralized API functions
+export const getTransactions = () => apiClient.get('/transactions');
+export const getTransactionDetails = (id) => apiClient.get(`/transaction/${id}`);
+export const processNewTransaction = (data) => apiClient.post('/process-transaction', data);
+export const updateTransactionStatus = (id, status) => apiClient.post('/status', {
+  transaction_id: id,
+  new_status: status,
+});
+```
+
+`vite.config.js`
+
+```javascript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    // Add this proxy to avoid CORS issues during development
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000', // Your Node.js server
+        changeOrigin: true,
+      },
+    },
+  },
+})
+```
+

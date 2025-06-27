@@ -1,69 +1,44 @@
+# python_backend/app.py
 from flask import Flask, request, jsonify
-import joblib
-import pandas as pd
-import lime.lime_tabular
-import numpy as np
+from dotenv import load_dotenv
+from pydantic import ValidationError
+from prediction_service import PredictionService, PredictionInput
 import os
+
+load_dotenv() # Load environment variables from .env
 
 app = Flask(__name__)
 
-# Load model and encoders
-model = joblib.load('model/fraud_detection_model.pkl')
-label_encoders = joblib.load('model/label_encoders.pkl')
+# ✨ Instantiate the service once on startup
+try:
+    prediction_service = PredictionService()
+except Exception as e:
+    # If the service fails to load, the app is useless.
+    print(f"❌ FATAL: Could not initialize PredictionService: {e}")
+    prediction_service = None
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    if not prediction_service:
+        return jsonify({"success": False, "error": {"message": "Prediction service is not available."}}), 503
+
     try:
-        # Get request data
-        data = request.json
-        print("📩 Received Data:", data)
+        # ✨ Validate input data using the Pydantic model
+        input_data = PredictionInput(**request.json)
+        
+        # Delegate the core logic to the service
+        result = prediction_service.predict(input_data)
+        
+        # ✨ Use standardized success response
+        return jsonify({"success": True, "data": result})
 
-        # Expected features
-        features = [
-            "customer_id", "amount", "merchant", "transaction_type",
-            "location_from", "location_to", "customer_transaction_count",
-            "payment_method", "merchant_risk_score", "previous_location", "hour_of_day"
-        ]
-
-        # Convert input to DataFrame
-        df = pd.DataFrame([data])
-
-        # Convert numeric columns
-        numeric_cols = ['amount', 'merchant_risk_score', 'customer_transaction_count', 'hour_of_day']
-        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
-
-        # Encode categorical variables safely
-        categorical_columns = ["customer_id", "merchant", "transaction_type", "location_from", "location_to", "payment_method", "previous_location"]
-        for column in categorical_columns:
-            if column in label_encoders:
-                # If the category is not in the classes, we map it to a default value like -1
-                df[column] = df[column].map(lambda x: label_encoders[column].transform([x])[0] if x in label_encoders[column].classes_ else -1)
-
-        print("📊 Encoded DataFrame:", df)
-
-        # Make prediction
-        prediction = model.predict(df[features])[0]  # Ensure it's using the correct feature set
-        print("🎯 Prediction:", prediction)
-
-        # Explain the prediction using LIME
-        explainer = lime.lime_tabular.LimeTabularExplainer(
-            training_data=np.load('model/training_data.npy'),  # Ensure this file exists and has correct format
-            feature_names=features,
-            class_names=['Not Fraud', 'Fraud'],
-            discretize_continuous=True
-        )
-        exp = explainer.explain_instance(df.iloc[0].values, model.predict_proba)
-        explanation = exp.as_list()
-        explanation_str = ' '.join([f"{feat}: {weight}" for feat, weight in explanation])
-
-        print("📝 Explanation:", explanation_str)
-
-        # Return response
-        return jsonify({"fraud_flag": int(prediction), "explanation": explanation_str})
-
+    except ValidationError as e:
+        # Return a structured validation error
+        return jsonify({"success": False, "error": {"message": "Invalid input data", "details": e.errors()}}), 400
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
-        return jsonify({"error": str(e)})
+        print(f"❌ Error in /predict: {str(e)}")
+        return jsonify({"success": False, "error": {"message": "An unexpected error occurred."}}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
